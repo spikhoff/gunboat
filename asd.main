@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ROWS 10
+#define COLS 10
+#define MINES 10
+
+typedef struct {
+    int isMine;
+    int isRevealed;
+    int adjacentMines;
+} Cell;
+
+typedef struct {
+    Cell cells[ROWS][COLS];
+} Board;
+
+void initializeBoard(Board *board) {
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            board->cells[i][j].isMine = 0;
+            board->cells[i][j].isRevealed = 0;
+            board->cells[i][j].adjacentMines = 0;
+        }
+    }
+}
+
+void placeMines(Board *board) {
+    srand(time(NULL));
+    int placedMines = 0;
+    while (placedMines < MINES) {
+        int row = rand() % ROWS;
+        int col = rand() % COLS;
+        if (!board->cells[row][col].isMine) {
+            board->cells[row][col].isMine = 1;
+            placedMines++;
+        }
+    }
+}
+
+void calculateAdjacentMines(Board *board) {
+    int directions[8][2] = {
+        {-1, -1}, {-1, 0}, {-1, 1},
+        {0, -1},          {0, 1},
+        {1, -1}, {1, 0}, {1, 1}
+    };
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            if (board->cells[i][j].isMine) continue;
+            int count = 0;
+            for (int d = 0; d < 8; d++) {
+                int ni = i + directions[d][0];
+                int nj = j + directions[d][1];
+                if (ni >= 0 && ni < ROWS && nj >= 0 && nj < COLS && board->cells[ni][nj].isMine) {
+                    count++;
+                }
+            }
+            board->cells[i][j].adjacentMines = count;
+        }
+    }
+}
+
+void revealCell(Board *board, int row, int col) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS || board->cells[row][col].isRevealed) {
+        return;
+    }
+    board->cells[row][col].isRevealed = 1;
+    if (board->cells[row][col].adjacentMines == 0 && !board->cells[row][col].isMine) {
+        int directions[8][2] = {
+            {-1, -1}, {-1, 0}, {-1, 1},
+            {0, -1},          {0, 1},
+            {1, -1}, {1, 0}, {1, 1}
+        };
+        for (int d = 0; d < 8; d++) {
+            revealCell(board, row + directions[d][0], col + directions[d][1]);
+        }
+    }
+}
+
+int main() {
+    Board board;
+    initializeBoard(&board);
+    placeMines(&board);
+    calculateAdjacentMines(&board);
+
+    // Example of revealing a cell
+    revealCell(&board, 0, 0);
+
+    return 0;
+}
